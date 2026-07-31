@@ -29,7 +29,7 @@ _GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 _IP_LOOKUP_URL = "http://ip-api.com/json/"
 
-_REQUEST_TIMEOUT = 6  # seconds
+_REQUEST_TIMEOUT = 6
 
 _WEATHER_CODES = {
     0: ("Clear sky", "☀️"),
