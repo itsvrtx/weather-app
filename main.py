@@ -12,6 +12,7 @@ class WeatherApp(ctk.CTk):
     BORDER = "#2A2E35"
 
     BASE_WIDTH = 420
+    MAX_CONTENT_WIDTH = 560
     BASE_FONTS = {
         "location": 20,
         "temp": 56,
@@ -27,6 +28,7 @@ class WeatherApp(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+        
         self.title("Atmosphere - Weather")
         self.geometry("340x480")
         self.minsize(340, 480)
@@ -40,17 +42,23 @@ class WeatherApp(ctk.CTk):
 
         self._build_ui()
         self.bind("<Configure>", self._on_window_resize)
+        self.after(50, lambda: self._reflow_layout(self.winfo_width(), self.winfo_height()))
         self.after(200, self.detect_location)
 
     def _build_ui(self):
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        self.container = ctk.CTkFrame(self, fg_color="transparent")
-        self.container.grid(row=0, column=0, sticky="nsew", padx=24, pady=20)
+        self.container = ctk.CTkFrame(
+            self, 
+            fg_color="transparent", 
+            width=self.BASE_WIDTH, 
+            height=680
+        )
+        self.container.place(relx=0.5, rely=0, anchor="n")
+
         self.container.grid_columnconfigure(0, weight=1)
         self.container.grid_rowconfigure(5, weight=1)
+
         top_bar = ctk.CTkFrame(self.container, fg_color="transparent")
-        top_bar.grid(row=0, column=0, sticky="ew", pady=(0, 24))
+        top_bar.grid(row=0, column=0, sticky="ew", pady=(20, 24), padx=24)
         top_bar.grid_columnconfigure(0, weight=1)
 
         self.city_dropdown = ctk.CTkOptionMenu(
@@ -83,7 +91,6 @@ class WeatherApp(ctk.CTk):
             command=self.detect_location,
         )
         self.locate_button.grid(row=0, column=1)
-
         self.location_label = ctk.CTkLabel(
             self.container,
             text="Detecting your location...",
@@ -91,17 +98,16 @@ class WeatherApp(ctk.CTk):
             text_color=self.TEXT_PRIMARY,
         )
         self.location_label.grid(row=1, column=0, pady=(0, 4))
-
         main_weather_frame = ctk.CTkFrame(self.container, fg_color="transparent")
         main_weather_frame.grid(row=2, column=0, pady=(10, 20))
 
         self.icon_label = ctk.CTkLabel(
             main_weather_frame,
             text="🌍",
-            font=("Helvetica", self.BASE_FONTS["icon"]),
+            font=("Segoe UI Emoji", self.BASE_FONTS["icon"]),
             text_color=self.ACCENT,
         )
-        self.icon_label.pack()
+        self.icon_label.pack(padx=(18, 0))
 
         self.temp_label = ctk.CTkLabel(
             main_weather_frame,
@@ -118,25 +124,23 @@ class WeatherApp(ctk.CTk):
             text_color=self.TEXT_SECONDARY,
         )
         self.condition_label.pack(pady=(4, 0))
-
         details_frame = ctk.CTkFrame(
             self.container, fg_color=self.CARD_COLOR, corner_radius=16,
             border_width=1, border_color=self.BORDER,
         )
-        details_frame.grid(row=3, column=0, sticky="ew", pady=(0, 24))
+        details_frame.grid(row=3, column=0, sticky="ew", pady=(0, 24), padx=24)
         details_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
         self.wind_label = self._build_detail_item(details_frame, "Wind", "-- km/h", 0)
         self.humidity_label = self._build_detail_item(details_frame, "Humidity", "--%", 1)
         self.sun_label = self._build_detail_item(details_frame, "UV Index", "--", 2)
-
         self.forecast_title = ctk.CTkLabel(
             self.container,
             text="Hourly Forecast",
             font=("Helvetica", self.BASE_FONTS["section_title"], "bold"),
             text_color=self.TEXT_PRIMARY,
         )
-        self.forecast_title.grid(row=4, column=0, sticky="w", pady=(0, 10))
+        self.forecast_title.grid(row=4, column=0, sticky="w", pady=(0, 10), padx=24)
 
         self.hourly_frame = ctk.CTkScrollableFrame(
             self.container,
@@ -144,18 +148,16 @@ class WeatherApp(ctk.CTk):
             fg_color="transparent",
             height=110,
         )
-        self.hourly_frame.grid(row=5, column=0, sticky="nsew")
+        self.hourly_frame.grid(row=5, column=0, sticky="nsew", padx=24)
 
         self._forecast_cards = []
         self._add_forecast_card("Now", "--°", "🌡️")
-
         self.status_label = ctk.CTkLabel(
             self.container, text="", font=("Helvetica", 12), text_color="#E06C75"
         )
-        self.status_label.grid(row=6, column=0, pady=(10, 0))
+        self.status_label.grid(row=6, column=0, pady=(10, 16))
 
     def _build_detail_item(self, parent, label_text, value_text, column):
-        """Builds a single minimalist detail cell (label above value)."""
         cell = ctk.CTkFrame(parent, fg_color="transparent")
         cell.grid(row=0, column=column, sticky="nsew", padx=10, pady=18)
 
@@ -191,7 +193,7 @@ class WeatherApp(ctk.CTk):
         )
         time_lbl.pack(pady=(12, 4))
 
-        icon_lbl = ctk.CTkLabel(card, text=icon, font=("Helvetica", self.BASE_FONTS["card_icon"]))
+        icon_lbl = ctk.CTkLabel(card, text=icon, font=("Segoe UI Emoji", self.BASE_FONTS["card_icon"]))
         icon_lbl.pack()
 
         temp_lbl = ctk.CTkLabel(
@@ -219,14 +221,25 @@ class WeatherApp(ctk.CTk):
     def _on_window_resize(self, event):
         if event.widget is not self:
             return
-        # Debounce so we don't recompute on every pixel of a drag
         if self._resize_job is not None:
             self.after_cancel(self._resize_job)
-        self._resize_job = self.after(120, lambda: self._apply_responsive_scale(event.width))
+        width, height = event.width, event.height
+        self._resize_job = self.after(80, lambda: self._reflow_layout(width, height))
 
-    def _apply_responsive_scale(self, width):
+    def _reflow_layout(self, width, height):
         self._resize_job = None
-        scale = max(0.75, min(1.4, width / self.BASE_WIDTH))
+        if width <= 1 or height <= 1:
+            return
+
+        target_width = max(300, min(width - 32, self.MAX_CONTENT_WIDTH))
+        target_height = max(420, height - 24)
+        
+        self.container.configure(width=target_width, height=target_height)
+
+        self._apply_responsive_scale(target_width)
+
+    def _apply_responsive_scale(self, content_width):
+        scale = max(0.75, min(1.45, content_width / self.BASE_WIDTH))
         if abs(scale - self._scale) < 0.03:
             return
         self._scale = scale
@@ -235,14 +248,14 @@ class WeatherApp(ctk.CTk):
             return max(8, int(self.BASE_FONTS[key] * scale))
 
         self.location_label.configure(font=("Helvetica", s("location"), "bold"))
-        self.icon_label.configure(font=("Helvetica", s("icon")))
+        self.icon_label.configure(font=("Segoe UI Emoji", s("icon")))
         self.temp_label.configure(font=("Helvetica", s("temp"), "bold"))
         self.condition_label.configure(font=("Helvetica", s("condition")))
         self.forecast_title.configure(font=("Helvetica", s("section_title"), "bold"))
 
         for card, time_lbl, icon_lbl, temp_lbl in self._forecast_cards:
             time_lbl.configure(font=("Helvetica", s("card_time")))
-            icon_lbl.configure(font=("Helvetica", s("card_icon")))
+            icon_lbl.configure(font=("Segoe UI Emoji", s("card_icon")))
             temp_lbl.configure(font=("Helvetica", s("card_temp"), "bold"))
 
     def _on_city_selected(self, choice: str):
@@ -303,6 +316,7 @@ class WeatherApp(ctk.CTk):
             self.wind_label.configure(text="-- km/h")
             self.sun_label.configure(text="--")
             self.status_label.configure(text=data.get("error", "Failed to load data."))
+
 
 if __name__ == "__main__":
     app = WeatherApp()
