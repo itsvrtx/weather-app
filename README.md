@@ -6,6 +6,13 @@ A sleek, minimalist desktop weather application built with Python and CustomTkin
 
 ---
 
+## 🖼️ Application Preview
+
+<img width="337" height="455" alt="image" src="https://github.com/user-attachments/assets/8cd1c7e7-c6ad-4853-8250-6280e78512db" />
+
+
+---
+
 ## ✨ Features
 
 * **Zero Configuration:** No API keys or account creation needed.
